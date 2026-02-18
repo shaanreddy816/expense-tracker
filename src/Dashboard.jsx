@@ -201,7 +201,7 @@ export default function Dashboard() {
     setShowTour(false);
   };
 
-  // ---------- helper functions ----------
+  // ---------- helper functions (Phase 3A) ----------
   const fileInputRef = useRef(null);
   const fileInputRefCsv = useRef(null);
 
@@ -257,6 +257,172 @@ export default function Dashboard() {
     reader.readAsText(file);
     event.target.value = null;
   };
+
+  // ---------- CSV import ----------
+  const handleCsvUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const newExpenses = [];
+        results.data.forEach((row) => {
+          const date = row.Date || row["Transaction Date"] || row["Date"];
+          const description = row.Description || row.Narration || row["Transaction Description"];
+          const amount = parseFloat(row.Amount || row["Debit Amount"] || row["Withdrawal"] || row["Debit"]);
+          const type = (row.Type || row["Transaction Type"] || row["Mode"] || "").toLowerCase();
+
+          if (amount && (type.includes("debit") || type.includes("withdrawal") || type.includes("payment") || type.includes("pos") || type.includes("atm"))) {
+            let startMonth = month;
+            if (date) {
+              const parts = date.split(/[-\/]/);
+              if (parts.length === 3) {
+                let day, monthNum, year;
+                if (parseInt(parts[0]) > 12) {
+                  [day, monthNum, year] = parts;
+                } else {
+                  [monthNum, day, year] = parts;
+                }
+                startMonth = `${year}-${monthNum.padStart(2, "0")}`;
+              }
+            }
+            newExpenses.push({
+              id: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
+              title: description ? description.substring(0, 30) : "Bank Transaction",
+              amount: amount,
+              category: "Other",
+              freqMonths: 1,
+              startMonth: startMonth,
+              person: "Me",
+            });
+          }
+        });
+
+        if (newExpenses.length > 0) {
+          setExpenses((prev) => [...newExpenses, ...prev]);
+          persist({ ...snapshot(), expenses: [...newExpenses, ...expenses] });
+          toast.success(`Imported ${newExpenses.length} expenses`);
+        } else {
+          toast.warn("No expense transactions found in CSV");
+        }
+      },
+      error: (error) => {
+        toast.error("CSV parse error: " + error.message);
+      },
+    });
+    event.target.value = null;
+  };
+
+  // ---------- email alerts ----------
+  const [emailAlerts, setEmailAlerts] = useState(false);
+  const [alertThreshold, setAlertThreshold] = useState(5000);
+  const [alertEmail, setAlertEmail] = useState("");
+  const [emailSent, setEmailSent] = useState(false);
+
+  useEffect(() => {
+    // Initialize EmailJS once (replace with your actual public key)
+    emailjs.init("YOUR_PUBLIC_KEY");
+  }, []);
+
+  useEffect(() => {
+    if (!emailAlerts || !alertEmail || balance > alertThreshold || emailSent) return;
+
+    const templateParams = {
+      to_email: alertEmail,
+      balance: money(balance),
+      threshold: money(alertThreshold),
+      month: month,
+    };
+
+    emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", templateParams)
+      .then(() => {
+        toast.success("Low balance alert sent");
+        setEmailSent(true);
+      })
+      .catch((error) => {
+        toast.error("Email failed: " + error.text);
+      });
+  }, [balance, emailAlerts, alertThreshold, alertEmail, emailSent, month]);
+
+  useEffect(() => {
+    if (balance > alertThreshold) {
+      setEmailSent(false);
+    }
+  }, [balance, alertThreshold]);
+
+  // ---------- receipt scanning ----------
+  const handleReceiptUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const loadingToast = toast.loading("Scanning receipt...");
+
+    try {
+      // Convert file to base64
+      const base64 = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result.split(",")[1]);
+        reader.readAsDataURL(file);
+      });
+
+      // Call OCR.space API (replace YOUR_API_KEY)
+      const response = await fetch("/api/ocr", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          base64Image: `data:image/jpeg;base64,${base64}`,
+          language: "eng",
+          isOverlayRequired: false,
+        }),
+      });
+
+      const data = await response.json();
+      toast.dismiss(loadingToast);
+
+      if (data.IsErroredOnProcessing) {
+        toast.error("Could not read receipt. Try a clearer image.");
+        return;
+      }
+
+      const text = data.ParsedResults[0].ParsedText;
+
+      // Extract amount (simple regex)
+      const amountMatch = text.match(/[₹]?\s*(\d+(?:[.,]\d+)?)/);
+      const amount = amountMatch ? parseFloat(amountMatch[1].replace(",", "")) : null;
+
+      if (amount) {
+        setExpenseAmt(amount.toString());
+
+        // Try to guess category from keywords
+        const lower = text.toLowerCase();
+        if (lower.includes("grocery") || lower.includes("supermarket")) {
+          setExpenseCategory("Groceries");
+        } else if (lower.includes("restaurant") || lower.includes("cafe") || lower.includes("food")) {
+          setExpenseCategory("Outside Food");
+        } else if (lower.includes("petrol") || lower.includes("fuel")) {
+          setExpenseCategory("Petrol");
+        } else if (lower.includes("electricity") || lower.includes("bill")) {
+          setExpenseCategory("Current Bill");
+        } // add more rules as needed
+
+        toast.success("Receipt scanned! Please review the amount and category.");
+      } else {
+        toast.warn("Could not detect amount. Please enter manually.");
+      }
+    } catch (error) {
+      toast.dismiss(loadingToast);
+      toast.error("Scan failed: " + error.message);
+    }
+  };
+
+  // ---------- calculations (to be added later) ----------
+  // We'll add useMemo blocks in the next phase
+
+  // ---------- actions (to be added later) ----------
 
   // Simple return for now
   return <div>Phase 1 – imports and constants added</div>;
