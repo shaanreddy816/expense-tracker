@@ -111,7 +111,8 @@ function monthsOfYear(year) {
 export default function Dashboard() {
   const auth = useAuth();
   const email = auth.user?.profile?.email || auth.user?.profile?.preferred_username || "Unknown user";
-    // ---------- profile management ----------
+
+  // ---------- profile management ----------
   const [profiles, setProfiles] = useState(() => {
     const saved = localStorage.getItem(PROFILES_STORAGE_KEY);
     return saved ? JSON.parse(saved) : ["Me", "Wife", "Kid"];
@@ -198,6 +199,63 @@ export default function Dashboard() {
   const closeTour = () => {
     localStorage.setItem(TOUR_SEEN_KEY, "true");
     setShowTour(false);
+  };
+
+  // ---------- helper functions ----------
+  const fileInputRef = useRef(null);
+  const fileInputRefCsv = useRef(null);
+
+  const snapshot = () => ({
+    categories,
+    familyMembers,
+    month,
+    incomes,
+    expenses,
+    planned,
+    monthlyLimit,
+    yearlyLimit,
+  });
+
+  const persist = (next) => saveState(currentProfile, next);
+
+  const exportData = () => {
+    const data = snapshot();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `expense-tracker-${currentProfile}-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importData = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (data.categories && data.familyMembers && data.month) {
+          setCategories(data.categories);
+          setFamilyMembers(data.familyMembers);
+          setMonth(data.month);
+          setIncomes(data.incomes || []);
+          setExpenses(data.expenses || []);
+          setPlanned(data.planned || []);
+          setMonthlyLimit(data.monthlyLimit || 0);
+          setYearlyLimit(data.yearlyLimit || 0);
+          persist(data);
+          toast.success("Data restored successfully!");
+        } else {
+          toast.error("Invalid backup file.");
+        }
+      } catch (err) {
+        toast.error("Error reading file.");
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = null;
   };
 
   // Simple return for now
