@@ -318,47 +318,6 @@ export default function Dashboard() {
     event.target.value = null;
   };
 
-  // ---------- email alerts (temporarily disabled) ----------
-  // ---------- email alerts ----------
-const [emailAlerts, setEmailAlerts] = useState(false);
-const [alertThreshold, setAlertThreshold] = useState(5000);
-const [alertEmail, setAlertEmail] = useState("");
-const [emailSent, setEmailSent] = useState(false);
-
-useEffect(() => {
-  emailjs.init(import.meta.env.VITE_EMAILJS_PUBLIC_KEY);
-}, []);
-
-useEffect(() => {
-  if (!emailAlerts || !alertEmail || balance > alertThreshold || emailSent) return;
-
-  const templateParams = {
-    to_email: alertEmail,
-    balance: money(balance),
-    threshold: money(alertThreshold),
-    month: month,
-  };
-
-  emailjs.send(
-    import.meta.env.VITE_EMAILJS_SERVICE_ID,
-    import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
-    templateParams
-  )
-    .then(() => {
-      toast.success("Low balance alert sent");
-      setEmailSent(true);
-    })
-    .catch((error) => {
-      toast.error("Email failed: " + error.text);
-    });
-}, [balance, emailAlerts, alertThreshold, alertEmail, emailSent, month]);
-
-useEffect(() => {
-  if (balance > alertThreshold) {
-    setEmailSent(false);
-  }
-}, [balance, alertThreshold]);
-
   // ---------- receipt scanning ----------
   const handleReceiptUpload = async (event) => {
     const file = event.target.files[0];
@@ -556,6 +515,46 @@ useEffect(() => {
         Actual: actualByCategory.get(c) || 0,
       }));
   }, [categories, plannedByCategory, actualByCategory]);
+
+  // ---------- email alerts (now after calculations, where balance is defined) ----------
+  const [emailAlerts, setEmailAlerts] = useState(false);
+  const [alertThreshold, setAlertThreshold] = useState(5000);
+  const [alertEmail, setAlertEmail] = useState("");
+  const [emailSent, setEmailSent] = useState(false);
+
+  useEffect(() => {
+    emailjs.init(import.meta.env.VITE_EMAILJS_PUBLIC_KEY);
+  }, []);
+
+  useEffect(() => {
+    if (!emailAlerts || !alertEmail || balance > alertThreshold || emailSent) return;
+
+    const templateParams = {
+      to_email: alertEmail,
+      balance: money(balance),
+      threshold: money(alertThreshold),
+      month: month,
+    };
+
+    emailjs.send(
+      import.meta.env.VITE_EMAILJS_SERVICE_ID,
+      import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+      templateParams
+    )
+      .then(() => {
+        toast.success("Low balance alert sent");
+        setEmailSent(true);
+      })
+      .catch((error) => {
+        toast.error("Email failed: " + error.text);
+      });
+  }, [balance, emailAlerts, alertThreshold, alertEmail, emailSent, month]);
+
+  useEffect(() => {
+    if (balance > alertThreshold) {
+      setEmailSent(false);
+    }
+  }, [balance, alertThreshold]);
 
   // ---------- notifications ----------
   useEffect(() => {
@@ -1288,7 +1287,7 @@ useEffect(() => {
 
       <div style={{ height: 14 }} />
 
-      {/* Email alerts panel (disabled for now) */}
+      {/* Email alerts panel */}
       <div className="panel">
         <div style={{ fontWeight: 900, fontSize: 16, marginBottom: 8 }}>📧 Low Balance Alerts</div>
         <div className="row" style={{ alignItems: "center" }}>
@@ -1325,8 +1324,6 @@ useEffect(() => {
         <div className="note">
           You'll get an email when your calculated balance (income − expenses) drops below the threshold.
           One email per threshold crossing.
-          <br />
-          <em>(Email alerts temporarily disabled – set up EmailJS credentials to enable)</em>
         </div>
       </div>
 
