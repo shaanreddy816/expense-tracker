@@ -110,7 +110,10 @@ function monthsOfYear(year) {
 
 export default function Dashboard() {
   const auth = useAuth();
-  const email = auth.user?.profile?.email || auth.user?.profile?.preferred_username || "Unknown user";
+  const email =
+    auth.user?.profile?.email ||
+    auth.user?.profile?.preferred_username ||
+    "Unknown user";
 
   // ---------- profile management ----------
   const [profiles, setProfiles] = useState(() => {
@@ -777,10 +780,14 @@ export default function Dashboard() {
               style={{ background: "transparent", border: "none" }}
             >
               {profiles.map((p) => (
-                <option key={p} value={p}>{p}</option>
+                <option key={p} value={p}>
+                  {p}
+                </option>
               ))}
             </select>
-            <button className="iconBtn" onClick={addProfile} title="Add profile">➕</button>
+            <button className="iconBtn" onClick={addProfile} title="Add profile">
+              ➕
+            </button>
           </div>
 
           <div className="grow">
@@ -823,6 +830,7 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* KPI Cards */}
       <div className="grid3">
         <div className="panel">
           <div className="kpiLabel">📥 Monthly Income</div>
@@ -843,6 +851,7 @@ export default function Dashboard() {
 
       <div style={{ height: 14 }} />
 
+      {/* Spending Limits */}
       <div className="grid2">
         <div className="panel">
           <div style={{ fontWeight: 900, fontSize: 16, marginBottom: 8 }}>📆 Your monthly spending limit</div>
@@ -881,7 +890,12 @@ export default function Dashboard() {
                   style={{
                     width: `${Math.min(monthlyLimitPct, 100)}%`,
                     height: "100%",
-                    background: monthlyLimitStatus === "ok" ? "#4caf50" : monthlyLimitStatus === "warn" ? "#ff9800" : "#f44336",
+                    background:
+                      monthlyLimitStatus === "ok"
+                        ? "#4caf50"
+                        : monthlyLimitStatus === "warn"
+                        ? "#ff9800"
+                        : "#f44336",
                     transition: "width 0.3s",
                   }}
                 />
@@ -932,7 +946,12 @@ export default function Dashboard() {
                   style={{
                     width: `${Math.min(yearlyLimitPct, 100)}%`,
                     height: "100%",
-                    background: yearlyLimitStatus === "ok" ? "#4caf50" : yearlyLimitStatus === "warn" ? "#ff9800" : "#f44336",
+                    background:
+                      yearlyLimitStatus === "ok"
+                        ? "#4caf50"
+                        : yearlyLimitStatus === "warn"
+                        ? "#ff9800"
+                        : "#f44336",
                     transition: "width 0.3s",
                   }}
                 />
@@ -949,6 +968,7 @@ export default function Dashboard() {
 
       <div style={{ height: 14 }} />
 
+      {/* Budget Summary */}
       <div className="grid3">
         <div className="panel">
           <div className="kpiLabel">📋 Planned Bills (Monthly)</div>
@@ -982,27 +1002,45 @@ export default function Dashboard() {
 
       <div style={{ height: 14 }} />
 
+      {/* Add Income & Expense */}
       <div className="grid2">
+        {/* Income Panel */}
         <div className="panel">
           <div style={{ fontWeight: 900, marginBottom: 12 }}>➕ Add Income</div>
           <div className="row">
             <div className="grow">
               <label>Source</label>
-              <input className="input" value={incomeType} onChange={(e) => setIncomeType(e.target.value)} placeholder="Salary / Rent" />
+              <input
+                className="input"
+                value={incomeType}
+                onChange={(e) => setIncomeType(e.target.value)}
+                placeholder="Salary / Rent"
+              />
             </div>
             <div className="grow">
               <label>Amount (₹)</label>
-              <input className="input" value={incomeAmt} onChange={(e) => setIncomeAmt(e.target.value)} placeholder="e.g. 7500" />
+              <input
+                className="input"
+                value={incomeAmt}
+                onChange={(e) => setIncomeAmt(e.target.value)}
+                placeholder="e.g. 7500"
+              />
             </div>
           </div>
           <div className="row" style={{ marginTop: 10 }}>
             <div className="grow">
               <label>How often?</label>
               <select value={incomeFreq} onChange={(e) => setIncomeFreq(Number(e.target.value))}>
-                {FREQS.map((f) => <option key={f.months} value={f.months}>{f.label}</option>)}
+                {FREQS.map((f) => (
+                  <option key={f.months} value={f.months}>
+                    {f.label}
+                  </option>
+                ))}
               </select>
             </div>
-            <button className="btn btnPrimary" onClick={addIncome}>➕ Add Income</button>
+            <button className="btn btnPrimary" onClick={addIncome}>
+              ➕ Add Income
+            </button>
           </div>
           <div className="note">💡 Income is split into monthly amount (e.g. yearly ÷ 12).</div>
           <div style={{ height: 10 }} />
@@ -1012,16 +1050,28 @@ export default function Dashboard() {
           ) : (
             <table className="table">
               <thead>
-                <tr><th>Source</th><th>Amount</th><th>Freq</th><th>Start</th><th /></tr>
+                <tr>
+                  <th>Source</th>
+                  <th>Amount</th>
+                  <th>Freq</th>
+                  <th>Start</th>
+                  <th />
+                </tr>
               </thead>
               <tbody>
                 {incomes.slice(0, 8).map((i) => (
                   <tr key={i.id}>
-                    <td><b>{i.type}</b></td>
+                    <td>
+                      <b>{i.type}</b>
+                    </td>
                     <td>{money(i.amount)}</td>
                     <td>{i.freqMonths} mo</td>
                     <td>{i.startMonth}</td>
-                    <td><button className="iconBtn" onClick={() => deleteIncome(i.id)}>🗑️</button></td>
+                    <td>
+                      <button className="iconBtn" onClick={() => deleteIncome(i.id)} title="Delete">
+                        🗑️
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -1029,36 +1079,66 @@ export default function Dashboard() {
           )}
         </div>
 
+        {/* Expense Panel */}
         <div className="panel">
           <div style={{ fontWeight: 900, marginBottom: 12 }}>➕ Add Expense</div>
           <div style={{ marginBottom: 10 }}>
             <label>📸 Scan Receipt</label>
             <div className="row">
-              <input type="file" accept="image/*" onChange={handleReceiptUpload} style={{ display: "none" }} id="receipt-upload" />
-              <button className="btn" onClick={() => document.getElementById("receipt-upload").click()}>Upload Receipt Image</button>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleReceiptUpload}
+                style={{ display: "none" }}
+                id="receipt-upload"
+              />
+              <button
+                className="btn"
+                onClick={() => document.getElementById("receipt-upload").click()}
+              >
+                Upload Receipt Image
+              </button>
             </div>
           </div>
           <div className="row">
             <div className="grow">
               <label>What did you spend on?</label>
-              <input className="input" value={expenseTitle} onChange={(e) => setExpenseTitle(e.target.value)} placeholder="e.g. Groceries" />
+              <input
+                className="input"
+                value={expenseTitle}
+                onChange={(e) => setExpenseTitle(e.target.value)}
+                placeholder="e.g. Groceries"
+              />
             </div>
             <div className="grow">
               <label>Amount (₹)</label>
-              <input className="input" value={expenseAmt} onChange={(e) => setExpenseAmt(e.target.value)} placeholder="e.g. 250" />
+              <input
+                className="input"
+                value={expenseAmt}
+                onChange={(e) => setExpenseAmt(e.target.value)}
+                placeholder="e.g. 250"
+              />
             </div>
           </div>
           <div className="row" style={{ marginTop: 10 }}>
             <div className="grow">
               <label>Category</label>
               <select value={expenseCategory} onChange={(e) => setExpenseCategory(e.target.value)}>
-                {categories.map((c) => <option key={c} value={c}>{CATEGORY_ICONS[c] || "📌"} {c}</option>)}
+                {categories.map((c) => (
+                  <option key={c} value={c}>
+                    {CATEGORY_ICONS[c] || "📌"} {c}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="grow">
               <label>How often?</label>
               <select value={expenseFreq} onChange={(e) => setExpenseFreq(Number(e.target.value))}>
-                {FREQS.map((f) => <option key={f.months} value={f.months}>{f.label}</option>)}
+                {FREQS.map((f) => (
+                  <option key={f.months} value={f.months}>
+                    {f.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -1066,31 +1146,57 @@ export default function Dashboard() {
             <div className="grow">
               <label>Who spent?</label>
               <select value={expensePerson} onChange={(e) => setExpensePerson(e.target.value)}>
-                {familyMembers.map((m) => <option key={m} value={m}>{m}</option>)}
+                {familyMembers.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="grow">
               <label>Remind me on</label>
-              <input type="date" className="input" value={expenseReminderDate} onChange={(e) => setExpenseReminderDate(e.target.value)} />
+              <input
+                type="date"
+                className="input"
+                value={expenseReminderDate}
+                onChange={(e) => setExpenseReminderDate(e.target.value)}
+              />
             </div>
           </div>
           <div className="row" style={{ marginTop: 10 }}>
-            <button className="btn btnPrimary" onClick={addExpense}>➕ Add Expense</button>
+            <button className="btn btnPrimary" onClick={addExpense}>
+              ➕ Add Expense
+            </button>
           </div>
 
+          {/* Category & Family member management */}
           <div className="row" style={{ marginTop: 15 }}>
             <div className="grow">
               <label>➕ New category</label>
               <div className="row">
-                <input className="input" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="e.g. Netflix" />
-                <button className="btn" onClick={addCategory}>+ Add</button>
+                <input
+                  className="input"
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  placeholder="e.g. Netflix"
+                />
+                <button className="btn" onClick={addCategory}>
+                  + Add
+                </button>
               </div>
             </div>
             <div className="grow">
               <label>➕ New family member</label>
               <div className="row">
-                <input className="input" value={newMember} onChange={(e) => setNewMember(e.target.value)} placeholder="e.g. Son" />
-                <button className="btn" onClick={addFamilyMember}>+ Add</button>
+                <input
+                  className="input"
+                  value={newMember}
+                  onChange={(e) => setNewMember(e.target.value)}
+                  placeholder="e.g. Son"
+                />
+                <button className="btn" onClick={addFamilyMember}>
+                  + Add
+                </button>
               </div>
             </div>
           </div>
@@ -1101,7 +1207,13 @@ export default function Dashboard() {
               <span key={m} className="pill" style={{ marginRight: 5 }}>
                 {m}
                 {m !== "Me" && (
-                  <button className="iconBtn" onClick={() => removeFamilyMember(m)} style={{ padding: 2 }}>✕</button>
+                  <button
+                    className="iconBtn"
+                    onClick={() => removeFamilyMember(m)}
+                    style={{ padding: 2 }}
+                  >
+                    ✕
+                  </button>
                 )}
               </span>
             ))}
@@ -1109,13 +1221,18 @@ export default function Dashboard() {
 
           <div style={{ height: 10 }} />
 
+          {/* Expense list with filter */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
             <div style={{ fontWeight: 900 }}>Your Expenses</div>
             <div style={{ display: "flex", gap: 8 }}>
               <label>Filter by:</label>
               <select value={filterPerson} onChange={(e) => setFilterPerson(e.target.value)}>
                 <option value="All">All</option>
-                {familyMembers.map((m) => <option key={m} value={m}>{m}</option>)}
+                {familyMembers.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -1138,48 +1255,78 @@ export default function Dashboard() {
               <tbody>
                 {filteredExpenses.slice(0, 10).map((e) => (
                   <tr key={e.id}>
-                    <td><b>{e.title}</b></td>
-                    <td>{CATEGORY_ICONS[e.category] || "📌"} {e.category}</td>
+                    <td>
+                      <b>{e.title}</b>
+                    </td>
+                    <td>
+                      {CATEGORY_ICONS[e.category] || "📌"} {e.category}
+                    </td>
                     <td>{money(e.amount)}</td>
                     <td>{e.freqMonths} mo</td>
                     <td>{e.startMonth}</td>
                     <td>{e.person}</td>
                     <td>{e.reminderDate || "—"}</td>
-                    <td><button className="iconBtn" onClick={() => deleteExpense(e.id)}>🗑️</button></td>
+                    <td>
+                      <button className="iconBtn" onClick={() => deleteExpense(e.id)} title="Delete">
+                        🗑️
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           )}
-          <div className="note">💡 Balance = Income − Expenses. Use balance for savings, investments, or emergency fund.</div>
+          <div className="note">
+            💡 Balance = Income − Expenses. Use balance for savings, investments, or emergency fund.
+          </div>
         </div>
       </div>
 
       <div style={{ height: 14 }} />
 
+      {/* Email alerts panel */}
       <div className="panel">
         <div style={{ fontWeight: 900, fontSize: 16, marginBottom: 8 }}>📧 Low Balance Alerts</div>
         <div className="row" style={{ alignItems: "center" }}>
           <div className="grow" style={{ flex: "0 0 auto" }}>
             <label style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-              <input type="checkbox" checked={emailAlerts} onChange={(e) => setEmailAlerts(e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={emailAlerts}
+                onChange={(e) => setEmailAlerts(e.target.checked)}
+              />
               Enable
             </label>
           </div>
           <div className="grow">
             <label>Alert if balance below (₹)</label>
-            <input type="number" className="input" value={alertThreshold} onChange={(e) => setAlertThreshold(Number(e.target.value))} />
+            <input
+              type="number"
+              className="input"
+              value={alertThreshold}
+              onChange={(e) => setAlertThreshold(Number(e.target.value))}
+            />
           </div>
           <div className="grow">
             <label>Email to notify</label>
-            <input type="email" className="input" value={alertEmail} onChange={(e) => setAlertEmail(e.target.value)} placeholder="you@example.com" />
+            <input
+              type="email"
+              className="input"
+              value={alertEmail}
+              onChange={(e) => setAlertEmail(e.target.value)}
+              placeholder="you@example.com"
+            />
           </div>
         </div>
-        <div className="note">You'll get an email when your calculated balance (income − expenses) drops below the threshold.</div>
+        <div className="note">
+          You'll get an email when your calculated balance (income − expenses) drops below the threshold.
+          One email per threshold crossing.
+        </div>
       </div>
 
       <div style={{ height: 14 }} />
 
+      {/* Category Budgets */}
       <div className="panel">
         <div className="topbar" style={{ marginBottom: 8 }}>
           <div style={{ fontWeight: 900, fontSize: 16 }}>📋 Set monthly budget for each category</div>
@@ -1189,36 +1336,67 @@ export default function Dashboard() {
           <div className="grow" style={{ position: "relative" }}>
             <label>Category</label>
             <div className="row" style={{ gap: 5 }}>
-              <select value={planCategory} onChange={(e) => setPlanCategory(e.target.value)} style={{ flex: 1 }}>
-                {categories.map((c) => <option key={c} value={c}>{CATEGORY_ICONS[c] || "📌"} {c}</option>)}
+              <select
+                value={planCategory}
+                onChange={(e) => setPlanCategory(e.target.value)}
+                style={{ flex: 1 }}
+              >
+                {categories.map((c) => (
+                  <option key={c} value={c}>
+                    {CATEGORY_ICONS[c] || "📌"} {c}
+                  </option>
+                ))}
               </select>
-              <input type="text" placeholder="New" value={newBudgetCategory} onChange={(e) => setNewBudgetCategory(e.target.value)} style={{ width: "80px", padding: "8px" }} />
-              <button className="btn" onClick={() => {
-                const c = newBudgetCategory.trim();
-                if (c && !categories.includes(c)) {
-                  const nextCategories = [...categories, c];
-                  setCategories(nextCategories);
-                  setPlanCategory(c);
-                  setNewBudgetCategory("");
-                  persist({ ...snapshot(), categories: nextCategories });
-                }
-              }}>➕</button>
+              <input
+                type="text"
+                placeholder="New"
+                value={newBudgetCategory}
+                onChange={(e) => setNewBudgetCategory(e.target.value)}
+                style={{ width: "80px", padding: "8px" }}
+              />
+              <button
+                className="btn"
+                onClick={() => {
+                  const c = newBudgetCategory.trim();
+                  if (c && !categories.includes(c)) {
+                    const nextCategories = [...categories, c];
+                    setCategories(nextCategories);
+                    setPlanCategory(c);
+                    setNewBudgetCategory("");
+                    persist({ ...snapshot(), categories: nextCategories });
+                  }
+                }}
+              >
+                ➕
+              </button>
             </div>
           </div>
           <div className="grow">
             <label>Monthly budget (₹)</label>
-            <input className="input" value={planAmt} onChange={(e) => setPlanAmt(e.target.value)} placeholder="e.g. 1500" />
+            <input
+              className="input"
+              value={planAmt}
+              onChange={(e) => setPlanAmt(e.target.value)}
+              placeholder="e.g. 1500"
+            />
           </div>
-          <button className="btn btnPrimary" onClick={setPlannedBudget}>💾 Save budget</button>
+          <button className="btn btnPrimary" onClick={setPlannedBudget}>
+            💾 Save budget
+          </button>
         </div>
-        <div className="note">✅ Green = within budget • 🟠 Orange = 10–15% over • 🔴 Red = &gt;20% over</div>
+        <div className="note">
+          ✅ Green = within budget • 🟠 Orange = 10–15% over • 🔴 Red = &gt;20% over
+        </div>
       </div>
 
       <div style={{ height: 14 }} />
 
+      {/* Category Report */}
       <div className="panel">
         <div className="topbar" style={{ marginBottom: 8 }}>
-          <div style={{ fontWeight: 900, fontSize: 16 }}>📊 Category wise – Budget vs Actual for {month}</div>
+          <div style={{ fontWeight: 900, fontSize: 16 }}>
+            📊 Category wise – Budget vs Actual for {month}
+          </div>
           <div className="pill">Switch month above to see history</div>
         </div>
         {reportRows.length === 0 ? (
@@ -1237,14 +1415,22 @@ export default function Dashboard() {
             <tbody>
               {reportRows.map((r) => (
                 <tr key={r.category}>
-                  <td><b>{CATEGORY_ICONS[r.category] || "📌"} {r.category}</b></td>
+                  <td>
+                    <b>
+                      {CATEGORY_ICONS[r.category] || "📌"} {r.category}
+                    </b>
+                  </td>
                   <td>{money(r.plannedVal)}</td>
                   <td>{money(r.actualVal)}</td>
                   <td>{money(r.diff)}</td>
                   <td>
-                    {r.tag === "ok" ? <span className="tag tagOk">✅ GREEN</span> :
-                     r.tag === "warn" ? <span className="tag tagWarn">🟠 ORANGE</span> :
-                     <span className="tag tagDanger">🔴 RED</span>}
+                    {r.tag === "ok" ? (
+                      <span className="tag tagOk">✅ GREEN</span>
+                    ) : r.tag === "warn" ? (
+                      <span className="tag tagWarn">🟠 ORANGE</span>
+                    ) : (
+                      <span className="tag tagDanger">🔴 RED</span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -1255,6 +1441,7 @@ export default function Dashboard() {
 
       <div style={{ height: 14 }} />
 
+      {/* Chart */}
       <div className="panel">
         <div style={{ fontWeight: 900, fontSize: 16, marginBottom: 8 }}>📊 Spending Chart</div>
         <ResponsiveContainer width="100%" height={300}>
@@ -1271,13 +1458,24 @@ export default function Dashboard() {
 
       <div style={{ height: 14 }} />
 
+      {/* Spending by Person */}
       <div className="panel">
         <div style={{ fontWeight: 900, fontSize: 16, marginBottom: 8 }}>👨‍👩‍👧 Spending by family member</div>
         <table className="table">
-          <thead><tr><th>Person</th><th>Monthly equivalent</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Person</th>
+              <th>Monthly equivalent</th>
+            </tr>
+          </thead>
           <tbody>
             {expensesByPerson.map(([person, amt]) => (
-              <tr key={person}><td><b>{person}</b></td><td>{money(amt)}</td></tr>
+              <tr key={person}>
+                <td>
+                  <b>{person}</b>
+                </td>
+                <td>{money(amt)}</td>
+              </tr>
             ))}
           </tbody>
         </table>
