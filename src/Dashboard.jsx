@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import Papa from "papaparse";          // for CSV import (already present)
 import emailjs from "@emailjs/browser"; // for email alerts (already present)
+console.log("Dashboard module is loading");
 
 const STORAGE_KEY_PREFIX = "expense_tracker_";
 const TOUR_SEEN_KEY = "expense_tracker_tour_seen";
