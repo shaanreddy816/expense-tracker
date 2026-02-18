@@ -317,43 +317,42 @@ export default function Dashboard() {
     });
     event.target.value = null;
   };
+// ---------- email alerts ----------
+const [emailAlerts, setEmailAlerts] = useState(false);
+const [alertThreshold, setAlertThreshold] = useState(5000);
+const [alertEmail, setAlertEmail] = useState("");
+const [emailSent, setEmailSent] = useState(false);
 
-  // ---------- email alerts ----------
-  const [emailAlerts, setEmailAlerts] = useState(false);
-  const [alertThreshold, setAlertThreshold] = useState(5000);
-  const [alertEmail, setAlertEmail] = useState("");
-  const [emailSent, setEmailSent] = useState(false);
+useEffect(() => {
+  // Initialize EmailJS once (replace with your actual public key)
+  emailjs.init("YOUR_PUBLIC_KEY");
+}, []);
 
-  useEffect(() => {
-    // Initialize EmailJS once (replace with your actual public key)
-    emailjs.init("YOUR_PUBLIC_KEY");
-  }, []);
+useEffect(() => {
+  if (!emailAlerts || !alertEmail || balance > alertThreshold || emailSent) return;
 
-  useEffect(() => {
-    if (!emailAlerts || !alertEmail || balance > alertThreshold || emailSent) return;
+  const templateParams = {
+    to_email: alertEmail,
+    balance: money(balance),
+    threshold: money(alertThreshold),
+    month: month,
+  };
 
-    const templateParams = {
-      to_email: alertEmail,
-      balance: money(balance),
-      threshold: money(alertThreshold),
-      month: month,
-    };
+  emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", templateParams)
+    .then(() => {
+      toast.success("Low balance alert sent");
+      setEmailSent(true);
+    })
+    .catch((error) => {
+      toast.error("Email failed: " + error.text);
+    });
+}, [balance, emailAlerts, alertThreshold, alertEmail, emailSent, month]);
 
-    emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", templateParams)
-      .then(() => {
-        toast.success("Low balance alert sent");
-        setEmailSent(true);
-      })
-      .catch((error) => {
-        toast.error("Email failed: " + error.text);
-      });
-  }, [balance, emailAlerts, alertThreshold, alertEmail, emailSent, month]);
-
-  useEffect(() => {
-    if (balance > alertThreshold) {
-      setEmailSent(false);
-    }
-  }, [balance, alertThreshold]);
+useEffect(() => {
+  if (balance > alertThreshold) {
+    setEmailSent(false);
+  }
+}, [balance, alertThreshold]);
 
   // ---------- receipt scanning ----------
   const handleReceiptUpload = async (event) => {
