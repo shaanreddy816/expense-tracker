@@ -111,6 +111,94 @@ function monthsOfYear(year) {
 export default function Dashboard() {
   const auth = useAuth();
   const email = auth.user?.profile?.email || auth.user?.profile?.preferred_username || "Unknown user";
+    // ---------- profile management ----------
+  const [profiles, setProfiles] = useState(() => {
+    const saved = localStorage.getItem(PROFILES_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : ["Me", "Wife", "Kid"];
+  });
+  const [currentProfile, setCurrentProfile] = useState(() => {
+    return localStorage.getItem(CURRENT_PROFILE_KEY) || "Me";
+  });
+
+  const switchProfile = (newProfile) => {
+    localStorage.setItem(CURRENT_PROFILE_KEY, newProfile);
+    window.location.reload();
+  };
+
+  const addProfile = () => {
+    const name = prompt("Enter new profile name (e.g., Wife, Kid)");
+    if (name && !profiles.includes(name)) {
+      const newProfiles = [...profiles, name];
+      setProfiles(newProfiles);
+      localStorage.setItem(PROFILES_STORAGE_KEY, JSON.stringify(newProfiles));
+      switchProfile(name);
+    }
+  };
+
+  // ---------- app state (per profile) ----------
+  const boot = useMemo(() => {
+    const saved = loadState(currentProfile);
+    if (saved) return saved;
+
+    return {
+      categories: DEFAULT_CATEGORIES,
+      familyMembers: DEFAULT_FAMILY,
+      month: currentMonth(),
+      incomes: [],
+      expenses: [],
+      planned: [],
+      monthlyLimit: 0,
+      yearlyLimit: 0,
+    };
+  }, [currentProfile]);
+
+  const [month, setMonth] = useState(boot.month || currentMonth());
+  const [categories, setCategories] = useState(boot.categories || DEFAULT_CATEGORIES);
+  const [familyMembers, setFamilyMembers] = useState(boot.familyMembers || DEFAULT_FAMILY);
+  const [incomes, setIncomes] = useState(boot.incomes || []);
+  const [expenses, setExpenses] = useState(boot.expenses || []);
+  const [planned, setPlanned] = useState(boot.planned || []);
+  const [monthlyLimit, setMonthlyLimit] = useState(boot.monthlyLimit || 0);
+  const [yearlyLimit, setYearlyLimit] = useState(boot.yearlyLimit || 0);
+
+  // UI form states
+  const [incomeType, setIncomeType] = useState("Salary");
+  const [incomeAmt, setIncomeAmt] = useState("");
+  const [incomeFreq, setIncomeFreq] = useState(1);
+
+  const [expenseTitle, setExpenseTitle] = useState("");
+  const [expenseAmt, setExpenseAmt] = useState("");
+  const [expenseCategory, setExpenseCategory] = useState("Other");
+  const [expenseFreq, setExpenseFreq] = useState(1);
+  const [expensePerson, setExpensePerson] = useState("Me");
+  const [expenseReminderDate, setExpenseReminderDate] = useState("");
+
+  const [newCategory, setNewCategory] = useState("");
+  const [newMember, setNewMember] = useState("");
+
+  const [planCategory, setPlanCategory] = useState("Home EMI");
+  const [planAmt, setPlanAmt] = useState("");
+  const [newBudgetCategory, setNewBudgetCategory] = useState("");
+
+  const [filterPerson, setFilterPerson] = useState("All");
+
+  // Dark mode
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem("darkMode") === "true");
+  useEffect(() => {
+    localStorage.setItem("darkMode", darkMode);
+    if (darkMode) {
+      document.body.classList.add("dark-mode");
+    } else {
+      document.body.classList.remove("dark-mode");
+    }
+  }, [darkMode]);
+
+  // ---------- onboarding tour ----------
+  const [showTour, setShowTour] = useState(() => !localStorage.getItem(TOUR_SEEN_KEY));
+  const closeTour = () => {
+    localStorage.setItem(TOUR_SEEN_KEY, "true");
+    setShowTour(false);
+  };
 
   // Simple return for now
   return <div>Phase 1 – imports and constants added</div>;
