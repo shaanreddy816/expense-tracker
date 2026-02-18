@@ -382,10 +382,302 @@ export default function Dashboard() {
     }
   };
 
-  // ---------- calculations (to be added later) ----------
-  // We'll add useMemo blocks in the next phase
+  // ---------- calculations ----------
+  const monthIncome = useMemo(() => {
+    return incomes
+      .filter((i) => appliesToMonth(i.startMonth, month))
+      .reduce((sum, i) => sum + (Number(i.amount) || 0) / (Number(i.freqMonths) || 1), 0);
+  }, [incomes, month]);
 
-  // ---------- actions (to be added later) ----------
+  const monthExpense = useMemo(() => {
+    return expenses
+      .filter((e) => appliesToMonth(e.startMonth, month))
+      .reduce((sum, e) => sum + (Number(e.amount) || 0) / (Number(e.freqMonths) || 1), 0);
+  }, [expenses, month]);
+
+  const balance = Math.max(0, monthIncome - monthExpense);
+
+  const plannedByCategory = useMemo(() => {
+    const map = new Map();
+    for (const c of categories) map.set(c, 0);
+
+    const byCat = new Map();
+    for (const p of planned) {
+      if (!appliesToMonth(p.startMonth, month)) continue;
+      const prev = byCat.get(p.category);
+      if (!prev || prev.startMonth < p.startMonth) byCat.set(p.category, p);
+    }
+
+    for (const [cat, rec] of byCat.entries()) {
+      map.set(cat, Number(rec.monthlyPlanned) || 0);
+    }
+    return map;
+  }, [planned, categories, month]);
+
+  const actualByCategory = useMemo(() => {
+    const map = new Map();
+    for (const c of categories) map.set(c, 0);
+
+    for (const e of expenses) {
+      if (!appliesToMonth(e.startMonth, month)) continue;
+      const eq = (Number(e.amount) || 0) / (Number(e.freqMonths) || 1);
+      map.set(e.category, (map.get(e.category) || 0) + eq);
+    }
+    return map;
+  }, [expenses, categories, month]);
+
+  const totalPlanned = useMemo(() => {
+    let t = 0;
+    for (const c of categories) t += plannedByCategory.get(c) || 0;
+    return t;
+  }, [plannedByCategory, categories]);
+
+  const overAmt = Math.max(0, monthExpense - totalPlanned);
+  const overPct = totalPlanned > 0 ? (overAmt / totalPlanned) * 100 : 0;
+
+  const budgetStatus = useMemo(() => {
+    if (monthExpense <= totalPlanned) return "ok";
+    if (overPct >= 10 && overPct <= 15) return "warn";
+    if (overPct > 20) return "danger";
+    return "warn";
+  }, [monthExpense, totalPlanned, overPct]);
+
+  const reportRows = useMemo(() => {
+    return categories
+      .filter((c) => (plannedByCategory.get(c) || 0) > 0 || (actualByCategory.get(c) || 0) > 0)
+      .map((c) => {
+        const plannedVal = plannedByCategory.get(c) || 0;
+        const actualVal = actualByCategory.get(c) || 0;
+        const diff = actualVal - plannedVal;
+        const pct = plannedVal > 0 ? (diff / plannedVal) * 100 : 0;
+
+        let tag = "ok";
+        if (diff > 0) {
+          if (pct >= 10 && pct <= 15) tag = "warn";
+          else if (pct > 20) tag = "danger";
+          else tag = "warn";
+        }
+        return { category: c, plannedVal, actualVal, diff, pct, tag };
+      });
+  }, [categories, plannedByCategory, actualByCategory]);
+
+  const expensesByPerson = useMemo(() => {
+    const map = new Map();
+    for (const p of familyMembers) map.set(p, 0);
+    for (const e of expenses) {
+      if (!appliesToMonth(e.startMonth, month)) continue;
+      const eq = (Number(e.amount) || 0) / (Number(e.freqMonths) || 1);
+      const person = e.person || "Me";
+      map.set(person, (map.get(person) || 0) + eq);
+    }
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [expenses, familyMembers, month]);
+
+  const filteredExpenses = useMemo(() => {
+    return expenses
+      .filter((e) => appliesToMonth(e.startMonth, month))
+      .filter((e) => filterPerson === "All" || e.person === filterPerson);
+  }, [expenses, month, filterPerson]);
+
+  const yearlyExpense = useMemo(() => {
+    const currentYear = month.split("-")[0];
+    const monthsThisYear = monthsOfYear(currentYear).filter((m) => m <= month);
+    let total = 0;
+    for (const m of monthsThisYear) {
+      const monthTotal = expenses
+        .filter((e) => appliesToMonth(e.startMonth, m))
+        .reduce((sum, e) => sum + (Number(e.amount) || 0) / (Number(e.freqMonths) || 1), 0);
+      total += monthTotal;
+    }
+    return total;
+  }, [expenses, month]);
+
+  const monthlyLimitPct = monthlyLimit > 0 ? (monthExpense / monthlyLimit) * 100 : 0;
+  const monthlyLimitStatus =
+    monthlyLimit === 0
+      ? "none"
+      : monthExpense <= monthlyLimit * 0.8
+      ? "ok"
+      : monthExpense <= monthlyLimit
+      ? "warn"
+      : "danger";
+
+  const yearlyLimitPct = yearlyLimit > 0 ? (yearlyExpense / yearlyLimit) * 100 : 0;
+  const yearlyLimitStatus =
+    yearlyLimit === 0
+      ? "none"
+      : yearlyExpense <= yearlyLimit * 0.8
+      ? "ok"
+      : yearlyExpense <= yearlyLimit
+      ? "warn"
+      : "danger";
+
+  const chartData = useMemo(() => {
+    return categories
+      .filter((c) => (plannedByCategory.get(c) || 0) > 0 || (actualByCategory.get(c) || 0) > 0)
+      .map((c) => ({
+        name: c,
+        Planned: plannedByCategory.get(c) || 0,
+        Actual: actualByCategory.get(c) || 0,
+      }));
+  }, [categories, plannedByCategory, actualByCategory]);
+
+  // ---------- notifications ----------
+  useEffect(() => {
+    if (monthlyLimit === 0) return;
+    const pct = (monthExpense / monthlyLimit) * 100;
+    if (pct >= 100) {
+      toast.error("🔴 You've exceeded your monthly limit!", {
+        position: "top-center",
+        autoClose: false,
+      });
+    } else if (pct >= 80) {
+      toast.warn("🟠 You've used 80% of your monthly limit", {
+        position: "top-center",
+        autoClose: false,
+      });
+    }
+  }, [monthExpense, monthlyLimit]);
+
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    expenses.forEach((e) => {
+      if (e.reminderDate && e.reminderDate <= today && !e.reminderNotified) {
+        toast.info(`🔔 Reminder: ${e.title} (${money(e.amount)})`, {
+          autoClose: false,
+        });
+        e.reminderNotified = true;
+        persist(snapshot());
+      }
+    });
+  }, [expenses]);
+
+  // ---------- actions ----------
+  const handleLogout = async () => {
+    await auth.removeUser?.();
+    const logoutUrl =
+      `${COGNITO_DOMAIN}/logout` +
+      `?client_id=${auth.settings.client_id}` +
+      `&logout_uri=${encodeURIComponent(auth.settings.post_logout_redirect_uri)}`;
+    window.location.href = logoutUrl;
+  };
+
+  const addCategory = () => {
+    const c = newCategory.trim();
+    if (!c || categories.includes(c)) return;
+    const nextCategories = [...categories, c];
+    setCategories(nextCategories);
+    setNewCategory("");
+    persist({ ...snapshot(), categories: nextCategories });
+  };
+
+  const addFamilyMember = () => {
+    const m = newMember.trim();
+    if (!m || familyMembers.includes(m)) return;
+    const nextMembers = [...familyMembers, m];
+    setFamilyMembers(nextMembers);
+    setNewMember("");
+    persist({ ...snapshot(), familyMembers: nextMembers });
+  };
+
+  const removeFamilyMember = (member) => {
+    if (member === "Me") return;
+    const nextMembers = familyMembers.filter((m) => m !== member);
+    setFamilyMembers(nextMembers);
+    const nextExpenses = expenses.map((e) =>
+      e.person === member ? { ...e, person: "Me" } : e
+    );
+    setExpenses(nextExpenses);
+    if (filterPerson === member) setFilterPerson("All");
+    persist({ ...snapshot(), familyMembers: nextMembers, expenses: nextExpenses });
+  };
+
+  const addIncome = () => {
+    const amt = Number(incomeAmt);
+    if (!Number.isFinite(amt) || amt <= 0) return;
+    const rec = {
+      id: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()),
+      type: incomeType.trim() || "Income",
+      amount: amt,
+      freqMonths: Number(incomeFreq) || 1,
+      startMonth: month,
+    };
+    const nextIncomes = [rec, ...incomes];
+    setIncomes(nextIncomes);
+    setIncomeAmt("");
+    persist({ ...snapshot(), incomes: nextIncomes });
+  };
+
+  const deleteIncome = (id) => {
+    const nextIncomes = incomes.filter((x) => x.id !== id);
+    setIncomes(nextIncomes);
+    persist({ ...snapshot(), incomes: nextIncomes });
+  };
+
+  const addExpense = () => {
+    const amt = Number(expenseAmt);
+    if (!expenseTitle.trim() || !Number.isFinite(amt) || amt <= 0) return;
+    const rec = {
+      id: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()),
+      title: expenseTitle.trim(),
+      amount: amt,
+      category: expenseCategory,
+      freqMonths: Number(expenseFreq) || 1,
+      startMonth: month,
+      person: expensePerson,
+      reminderDate: expenseReminderDate || undefined,
+      reminderNotified: false,
+    };
+    const nextExpenses = [rec, ...expenses];
+    setExpenses(nextExpenses);
+    setExpenseTitle("");
+    setExpenseAmt("");
+    setExpenseReminderDate("");
+    persist({ ...snapshot(), expenses: nextExpenses });
+  };
+
+  const deleteExpense = (id) => {
+    const nextExpenses = expenses.filter((x) => x.id !== id);
+    setExpenses(nextExpenses);
+    persist({ ...snapshot(), expenses: nextExpenses });
+  };
+
+  const setPlannedBudget = () => {
+    const amt = Number(planAmt);
+    if (!Number.isFinite(amt) || amt < 0) return;
+    const rec = {
+      id: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()),
+      category: planCategory,
+      monthlyPlanned: amt,
+      startMonth: month,
+    };
+    const nextPlanned = [rec, ...planned];
+    setPlanned(nextPlanned);
+    setPlanAmt("");
+    persist({ ...snapshot(), planned: nextPlanned });
+  };
+
+  const resetAll = () => {
+    const next = {
+      categories: DEFAULT_CATEGORIES,
+      familyMembers: DEFAULT_FAMILY,
+      month: currentMonth(),
+      incomes: [],
+      expenses: [],
+      planned: [],
+      monthlyLimit: 0,
+      yearlyLimit: 0,
+    };
+    setCategories(next.categories);
+    setFamilyMembers(next.familyMembers);
+    setMonth(next.month);
+    setIncomes([]);
+    setExpenses([]);
+    setPlanned([]);
+    setMonthlyLimit(0);
+    setYearlyLimit(0);
+    persist(next);
+  };
 
   // Simple return for now
   return <div>Phase 1 – imports and constants added</div>;
