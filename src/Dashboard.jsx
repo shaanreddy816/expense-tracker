@@ -318,42 +318,41 @@ export default function Dashboard() {
     event.target.value = null;
   };
 
-  // ---------- email alerts ----------
+  // ---------- email alerts (temporarily disabled) ----------
   const [emailAlerts, setEmailAlerts] = useState(false);
   const [alertThreshold, setAlertThreshold] = useState(5000);
   const [alertEmail, setAlertEmail] = useState("");
   const [emailSent, setEmailSent] = useState(false);
 
-  useEffect(() => {
-    // Initialize EmailJS once (replace with your actual public key)
-    emailjs.init("YOUR_PUBLIC_KEY");
-  }, []);
+  // useEffect(() => {
+  //   emailjs.init("YOUR_PUBLIC_KEY");
+  // }, []);
 
-  useEffect(() => {
-    if (!emailAlerts || !alertEmail || balance > alertThreshold || emailSent) return;
+  // useEffect(() => {
+  //   if (!emailAlerts || !alertEmail || balance > alertThreshold || emailSent) return;
 
-    const templateParams = {
-      to_email: alertEmail,
-      balance: money(balance),
-      threshold: money(alertThreshold),
-      month: month,
-    };
+  //   const templateParams = {
+  //     to_email: alertEmail,
+  //     balance: money(balance),
+  //     threshold: money(alertThreshold),
+  //     month: month,
+  //   };
 
-    emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", templateParams)
-      .then(() => {
-        toast.success("Low balance alert sent");
-        setEmailSent(true);
-      })
-      .catch((error) => {
-        toast.error("Email failed: " + error.text);
-      });
-  }, [balance, emailAlerts, alertThreshold, alertEmail, emailSent, month]);
+  //   emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", templateParams)
+  //     .then(() => {
+  //       toast.success("Low balance alert sent");
+  //       setEmailSent(true);
+  //     })
+  //     .catch((error) => {
+  //       toast.error("Email failed: " + error.text);
+  //     });
+  // }, [balance, emailAlerts, alertThreshold, alertEmail, emailSent, month]);
 
-  useEffect(() => {
-    if (balance > alertThreshold) {
-      setEmailSent(false);
-    }
-  }, [balance, alertThreshold]);
+  // useEffect(() => {
+  //   if (balance > alertThreshold) {
+  //     setEmailSent(false);
+  //   }
+  // }, [balance, alertThreshold]);
 
   // ---------- receipt scanning ----------
   const handleReceiptUpload = async (event) => {
@@ -1284,7 +1283,7 @@ export default function Dashboard() {
 
       <div style={{ height: 14 }} />
 
-      {/* Email alerts panel */}
+      {/* Email alerts panel (disabled for now) */}
       <div className="panel">
         <div style={{ fontWeight: 900, fontSize: 16, marginBottom: 8 }}>📧 Low Balance Alerts</div>
         <div className="row" style={{ alignItems: "center" }}>
@@ -1321,6 +1320,8 @@ export default function Dashboard() {
         <div className="note">
           You'll get an email when your calculated balance (income − expenses) drops below the threshold.
           One email per threshold crossing.
+          <br />
+          <em>(Email alerts temporarily disabled – set up EmailJS credentials to enable)</em>
         </div>
       </div>
 
