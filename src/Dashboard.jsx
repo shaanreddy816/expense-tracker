@@ -185,7 +185,7 @@ export default function Dashboard() {
   const [newBudgetCategory, setNewBudgetCategory] = useState("");
 
   const [filterPerson, setFilterPerson] = useState("All");
-  const [activeTab, setActiveTab] = useState("overview"); // mobile bottom nav
+  const [activeTab, setActiveTab] = useState("overview"); // for mobile bottom nav
 
   // Dark mode
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem("darkMode") === "true");
@@ -784,10 +784,10 @@ export default function Dashboard() {
         <button className={activeTab === 'settings' ? 'active' : ''} onClick={() => setActiveTab('settings')}>⚙️ Settings</button>
       </nav>
 
-      {/* Main Content – conditionally shown based on activeTab on mobile, but all visible on desktop via CSS */}
+      {/* Main Content – sections are shown/hidden via CSS based on activeTab on mobile, all visible on desktop */}
       <main className="dashboard-content">
-        {/* Overview Section (always visible on desktop) */}
-        <section className={`section overview-section ${activeTab === 'overview' || window.innerWidth > 768 ? '' : 'hidden-mobile'}`}>
+        {/* Overview Section */}
+        <section className={`section overview-section ${activeTab === 'overview' ? 'active' : ''}`}>
           <h2>Overview</h2>
           <div className="kpi-grid">
             <div className="kpi-card">
@@ -859,12 +859,9 @@ export default function Dashboard() {
         </section>
 
         {/* Add Section */}
-        <section className={`section add-section ${activeTab === 'add' || window.innerWidth > 768 ? '' : 'hidden-mobile'}`}>
+        <section className={`section add-section ${activeTab === 'add' ? 'active' : ''}`}>
           <h2>Add Transaction</h2>
-          <div className="add-tabs">
-            <button className={incomeType ? 'active' : ''} onClick={() => {}}>Income</button>
-            <button className={expenseTitle ? 'active' : ''} onClick={() => {}}>Expense</button>
-          </div>
+
           {/* Income Form */}
           <div className="form-card">
             <h3>➕ Add Income</h3>
@@ -947,10 +944,72 @@ export default function Dashboard() {
               <button className="btn btn-secondary" onClick={addFamilyMember}>+ Add</button>
             </div>
           </div>
+
+          {/* Income List */}
+          <div className="list-card">
+            <h3>Your Income</h3>
+            {incomes.length === 0 ? (
+              <p className="empty-state">No income added yet.</p>
+            ) : (
+              <table className="list-table">
+                <thead>
+                  <tr><th>Source</th><th>Amount</th><th>Freq</th><th>Start</th><th></th></tr>
+                </thead>
+                <tbody>
+                  {incomes.slice(0, 8).map(i => (
+                    <tr key={i.id}>
+                      <td>{i.type}</td>
+                      <td>{money(i.amount)}</td>
+                      <td>{i.freqMonths} mo</td>
+                      <td>{i.startMonth}</td>
+                      <td><button className="icon-btn" onClick={() => deleteIncome(i.id)}>🗑️</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* Expense List with Filter */}
+          <div className="list-card">
+            <div className="list-header">
+              <h3>Your Expenses</h3>
+              <div className="filter">
+                <label>Filter: </label>
+                <select value={filterPerson} onChange={(e) => setFilterPerson(e.target.value)}>
+                  <option value="All">All</option>
+                  {familyMembers.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+            </div>
+            {filteredExpenses.length === 0 ? (
+              <p className="empty-state">No expenses for this filter.</p>
+            ) : (
+              <table className="list-table">
+                <thead>
+                  <tr><th>Title</th><th>Category</th><th>Amount</th><th>Freq</th><th>Start</th><th>Person</th><th>Reminder</th><th></th></tr>
+                </thead>
+                <tbody>
+                  {filteredExpenses.slice(0, 10).map(e => (
+                    <tr key={e.id}>
+                      <td>{e.title}</td>
+                      <td>{CATEGORY_ICONS[e.category] || "📌"} {e.category}</td>
+                      <td>{money(e.amount)}</td>
+                      <td>{e.freqMonths} mo</td>
+                      <td>{e.startMonth}</td>
+                      <td>{e.person}</td>
+                      <td>{e.reminderDate || "—"}</td>
+                      <td><button className="icon-btn" onClick={() => deleteExpense(e.id)}>🗑️</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </section>
 
         {/* Reports Section */}
-        <section className={`section reports-section ${activeTab === 'reports' || window.innerWidth > 768 ? '' : 'hidden-mobile'}`}>
+        <section className={`section reports-section ${activeTab === 'reports' ? 'active' : ''}`}>
           <h2>Reports</h2>
 
           {/* Category Budgets */}
@@ -1032,7 +1091,7 @@ export default function Dashboard() {
         </section>
 
         {/* Settings Section */}
-        <section className={`section settings-section ${activeTab === 'settings' || window.innerWidth > 768 ? '' : 'hidden-mobile'}`}>
+        <section className={`section settings-section ${activeTab === 'settings' ? 'active' : ''}`}>
           <h2>Settings</h2>
 
           {/* Email Alerts */}
@@ -1080,9 +1139,6 @@ export default function Dashboard() {
           </div>
         </section>
       </main>
-
-      {/* Income & Expense Lists (could be placed in a modal or separate tab, but we'll keep them in the Add section for simplicity) */}
-      {/* For brevity, the lists are omitted but can be added back similarly. */}
     </div>
   );
 }
