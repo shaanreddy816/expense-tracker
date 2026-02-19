@@ -13,7 +13,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import Papa from "papaparse";
-// emailjs import removed
+import emailjs from "@emailjs/browser";
 
 console.log("Dashboard module is loading");
 
@@ -516,6 +516,52 @@ export default function Dashboard() {
         Actual: actualByCategory.get(c) || 0,
       }));
   }, [categories, plannedByCategory, actualByCategory]);
+
+  // ---------- email alerts ----------
+  const [emailAlerts, setEmailAlerts] = useState(false);
+  const [alertThreshold, setAlertThreshold] = useState(5000);
+  const [alertEmail, setAlertEmail] = useState("");
+  const [emailSent, setEmailSent] = useState(false);
+
+  const emailJsConfigured = import.meta.env.VITE_EMAILJS_PUBLIC_KEY && 
+                           import.meta.env.VITE_EMAILJS_SERVICE_ID && 
+                           import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+
+  useEffect(() => {
+    if (emailJsConfigured) {
+      emailjs.init(import.meta.env.VITE_EMAILJS_PUBLIC_KEY);
+    }
+  }, [emailJsConfigured]);
+
+  useEffect(() => {
+    if (!emailAlerts || !alertEmail || balance > alertThreshold || emailSent || !emailJsConfigured) return;
+
+    const templateParams = {
+      to_email: alertEmail,
+      balance: money(balance),
+      threshold: money(alertThreshold),
+      month: month,
+    };
+
+    emailjs.send(
+      import.meta.env.VITE_EMAILJS_SERVICE_ID,
+      import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+      templateParams
+    )
+      .then(() => {
+        toast.success("Low balance alert sent");
+        setEmailSent(true);
+      })
+      .catch((error) => {
+        toast.error("Email failed: " + error.text);
+      });
+  }, [balance, emailAlerts, alertThreshold, alertEmail, emailSent, month, emailJsConfigured]);
+
+  useEffect(() => {
+    if (balance > alertThreshold) {
+      setEmailSent(false);
+    }
+  }, [balance, alertThreshold]);
 
   // ---------- notifications ----------
   useEffect(() => {
@@ -1053,6 +1099,28 @@ export default function Dashboard() {
         {/* Settings Section */}
         <section className={`section settings-section ${activeTab === 'settings' ? 'active' : ''}`}>
           <h2>Settings</h2>
+
+          {/* Email Alerts */}
+          <div className="card">
+            <h3>Email Alerts</h3>
+            {!emailJsConfigured && (
+              <div className="warning">⚠️ EmailJS not configured. Please set environment variables.</div>
+            )}
+            <div className="settings-row">
+              <label>
+                <input type="checkbox" checked={emailAlerts} onChange={(e) => setEmailAlerts(e.target.checked)} />
+                Enable low balance alerts
+              </label>
+            </div>
+            <div className="settings-row">
+              <label>Threshold (₹)</label>
+              <input type="number" value={alertThreshold} onChange={(e) => setAlertThreshold(Number(e.target.value))} />
+            </div>
+            <div className="settings-row">
+              <label>Email</label>
+              <input type="email" value={alertEmail} onChange={(e) => setAlertEmail(e.target.value)} placeholder="you@example.com" />
+            </div>
+          </div>
 
           {/* Data Management */}
           <div className="card">
